@@ -18,7 +18,7 @@ class SignalR extends CallBack {
 
     final hubProtLogger = Logger("SignalR - hub");
 
-    const serverUrl = "https://webrtc.mamakschool.ir/ConnectionHub";
+    const serverUrl = "https://app.kanoon.ir/call/ConnectionHub";
     final connectionOptions = HttpConnectionOptions(
       transport: HttpTransportType.WebSockets,
       logMessageContent: true,
@@ -88,17 +88,17 @@ class SignalR extends CallBack {
       case MessageType.calling:
         updateListeners((callBack) => callBack.onNewCall(data));
       case MessageType.decline:
-        updateListeners((callBack) => callBack.onDeclined.call(data));
+        updateListeners((callBack) => callBack.onDeclined(data));
       case MessageType.accept:
-        updateListeners((callBack) => callBack.onAccept.call(data));
+        updateListeners((callBack) => callBack.onAccept(data));
       case MessageType.signal:
-        updateListeners((callBack) => callBack.onNewSignal.call(data));
+        updateListeners((callBack) => callBack.onNewSignal(data));
       case MessageType.updateUsers:
-        updateListeners((callBack) => callBack.onNewUserList.call(data));
+        updateListeners((callBack) => callBack.onNewUserList(data));
       case MessageType.callEnd:
-        updateListeners((callBack) => callBack.onCallEnd.call(data));
+        updateListeners((callBack) => callBack.onCallEnd(data));
       case MessageType.newState:
-        updateListeners((callBack) => callBack.onNewState.call(data));
+        updateListeners((callBack) => callBack.onNewState(data));
     }
   }
 

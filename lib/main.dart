@@ -1,4 +1,8 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_socket_io/firebase/firebase_api.dart';
 import 'package:flutter_socket_io/module.dart';
 import 'package:flutter_socket_io/my_webrtc_impl.dart';
 import 'package:flutter_socket_io/signalR_state.dart';
@@ -6,6 +10,9 @@ import 'package:get_it/get_it.dart';
 
 void main() async{
   await Module().initModule();
+  if(!kIsWeb) {
+    FireBaseApi().init();
+  }
   runApp(const MyApp());
 }
 
@@ -42,14 +49,12 @@ class _MyHomePageState extends State<MyHomePage> implements SignalRState {
 
   @override
   void dispose() {
-    print('dispose');
     widget.webRtcImpl.dispose();
     super.dispose();
   }
 
   @override
   void deactivate() {
-    print('deactivate');
     widget.webRtcImpl.dispose();
     super.deactivate();
   }
@@ -110,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> implements SignalRState {
                       .toString()) {
                 print('Calling user ${widget.peers[index]['connectionId']}');
                 widget.webRtcImpl.signalR
-                    .sendMessage("callUser", args: [widget.peers[index]]);
+                    .sendMessage("callUser", args: [widget.peers[index]['userId']]);
                 // hubConnection.invoke('callUser', args: [widget.peers[index]]);
                 _controller =
                     _scaffoldKey.currentState?.showBottomSheet((context) {
@@ -335,7 +340,7 @@ class _MyHomePageState extends State<MyHomePage> implements SignalRState {
                       onPressed: () async {
                         await widget.webRtcImpl.signalR.sendMessage(
                             "AnswerCall",
-                            args: [false, arguments!.first!]);
+                            args: [false, jsonDecode(jsonEncode(arguments!.first!))['userId']]);
                         _controller?.close();
                       },
                       icon: const Icon(
@@ -347,7 +352,7 @@ class _MyHomePageState extends State<MyHomePage> implements SignalRState {
                       onPressed: () async {
                         await widget.webRtcImpl.signalR.sendMessage(
                             "AnswerCall",
-                            args: [true, arguments!.first!]);
+                            args: [true, jsonDecode(jsonEncode(arguments!.first!))['userId']]);
                         _controller?.close();
                       },
                       icon: const Icon(
@@ -363,7 +368,6 @@ class _MyHomePageState extends State<MyHomePage> implements SignalRState {
   }
 
   void _handleUpdateUserList(List<Object?>? arguments) {
-    print('received data is $arguments');
     setState(() {
       widget.peers.clear();
       widget.peers.addAll(((arguments?.first ?? []) as List<dynamic>));

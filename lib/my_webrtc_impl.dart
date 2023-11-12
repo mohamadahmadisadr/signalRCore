@@ -5,13 +5,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_socket_io/my_webRTC.dart';
 import 'package:flutter_socket_io/signalR_state.dart';
 import 'package:flutter_socket_io/signalr.dart';
+import 'package:flutter_socket_io/user.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:signalr_netcore/hub_connection.dart';
 
 class MyWebRtcImpl implements MyWebRTC, SignalRState {
   final SignalR signalR;
 
-  MyWebRtcImpl(this.signalR){
+  MyWebRtcImpl(this.signalR) {
     signalR.addStateListener(this);
   }
 
@@ -109,13 +110,13 @@ class MyWebRtcImpl implements MyWebRTC, SignalRState {
   void dispose() {
     localeStream?.dispose();
     connections.clear();
-    signalR?.stop();
+    signalR.stop();
   }
 
   @override
   void start() {
     print('starting webRtc');
-    signalR?.start();
+    signalR.start();
     initMedia();
   }
 
@@ -153,7 +154,7 @@ class MyWebRtcImpl implements MyWebRTC, SignalRState {
     connection.onIceCandidate = (candidate) {
       print('candidate is ${candidate.toMap()}');
       signalR.sendMessage('sendSignal', args: [
-      jsonEncode({"candidate": candidate.toMap()}),
+        jsonEncode({"candidate": candidate.toMap()}),
         partnerClientId.toString()
       ]);
     };
@@ -174,9 +175,6 @@ class MyWebRtcImpl implements MyWebRTC, SignalRState {
     var connection = await getConnection(partnerClientId);
     var c = signal["candidate"];
     var s = signal["sdp"];
-    print('c => type is ${c.runtimeType} and data is $c');
-    print('s => type is ${s.runtimeType} and data is $s');
-    // Route signal based on type
     if (c != null) {
       receivedCandidateSignal(connection, partnerClientId, c);
     }
@@ -186,7 +184,6 @@ class MyWebRtcImpl implements MyWebRTC, SignalRState {
   }
 
   void closeConnection(signalingUser) {
-    print('connection lenght is ${connections.length}');
     var connection = connections[signalingUser];
     connection?.close();
     connections.removeWhere(
@@ -194,15 +191,12 @@ class MyWebRtcImpl implements MyWebRTC, SignalRState {
           value.iceGatheringState?.index ==
           connection?.iceGatheringState?.index,
     );
-    print('connection lenght is ${connections.length}');
   }
 
   @override
   void onAccept(data) {
-    print('call accepted');
     if (data == null && data!.isEmpty) return;
     var signalingUser = (data.first as dynamic);
-    print('accepted user is $signalingUser');
     initOffer(signalingUser['connectionId'], localeStream);
   }
 
@@ -210,7 +204,6 @@ class MyWebRtcImpl implements MyWebRTC, SignalRState {
   void onCallEnd(data) {
     if (data == null && data!.isEmpty) return;
     var signalingUser = (data.first as dynamic);
-    var objectobjectsignal = data[1];
     closeConnection(signalingUser['connectionId']);
   }
 
@@ -221,16 +214,13 @@ class MyWebRtcImpl implements MyWebRTC, SignalRState {
   }
 
   @override
-  void onNewCall(data) {
-    print(data);
-  }
+  void onNewCall(data) {}
 
   @override
   void onNewSignal(data) {
     if (data == null && data!.isEmpty) return;
     var signalingUser = (data.first as dynamic);
     var signal = data[1];
-    print('signal is ${signal}');
     newSignal(signalingUser['connectionId'], jsonDecode(signal as String));
   }
 
@@ -238,11 +228,17 @@ class MyWebRtcImpl implements MyWebRTC, SignalRState {
   void onNewState(data) {
     HubConnectionState event = data;
     if (event == HubConnectionState.Connected) {
+      User user = const User(
+          userName: 'TestUser',
+          connectionId: '',
+          userId:
+              'ffd5bf1ae0f87637c77f54189af58b27606d6a5c51eb72e1f4874b1c0d9877d0',
+          officeId:
+              '08e71c475d09044d856106a321bcea10e723a009ae125822d6fd2d44bff3e90d',
+          isOffice: false,
+          inCall: false);
       var name = "${kIsWeb ? 'Web' : 'Mobile'}_${Random().nextInt(1000)}";
-      print('joining as $name');
-      signalR?.sendMessage("Join", args: [name]);
-
-      // initRtc();
+      signalR.sendMessage("Join", args: [user.toMap()]);
     }
   }
 
